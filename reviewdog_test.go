@@ -49,7 +49,8 @@ golint.new.go:11:1: comment on exported function F2 should be of the form "F2 ..
 	p := parser.NewErrorformatParser(efm)
 	c := NewRawCommentWriter(os.Stdout)
 	d := NewDiffString(difftext, 1)
-	app := NewReviewdog("tool name", p, c, d, filter.ModeAdded, false)
+	pe := make(map[string]bool)
+	app := NewReviewdog("tool name", p, c, d, filter.ModeAdded, false, &pe)
 	app.Run(context.Background(), strings.NewReader(lintresult))
 	// Unordered output:
 	// golint.new.go:5:5: exported var NewError1 should have comment or be unexported
@@ -95,7 +96,8 @@ index 34cacb9..a727dd3 100644
 	efm, _ := errorformat.NewErrorformat([]string{`%f:%l:%c: %m`})
 	p := parser.NewErrorformatParser(efm)
 	d := NewDiffString(difftext, 1)
-	app := NewReviewdog("tool name", p, c, d, filter.ModeAdded, false)
+	pe := make(map[string]bool)
+	app := NewReviewdog("tool name", p, c, d, filter.ModeAdded, false, &pe)
 	app.Run(context.Background(), strings.NewReader(lintresult))
 }
 
@@ -128,7 +130,8 @@ golint.new.go:11:1: comment on exported function F2 should be of the form "F2 ..
 	efm, _ := errorformat.NewErrorformat([]string{`%f:%l:%c: %m`})
 	p := parser.NewErrorformatParser(efm)
 	d := NewDiffString(difftext, 1)
-	app := NewReviewdog("tool name", p, c, d, filter.ModeAdded, false)
+	pe := make(map[string]bool)
+	app := NewReviewdog("tool name", p, c, d, filter.ModeAdded, false, &pe)
 	err := app.Run(context.Background(), strings.NewReader(lintresult))
 
 	if err != nil {
@@ -164,7 +167,8 @@ golint.new.go:11:1: comment on exported function F2 should be of the form "F2 ..
 	efm, _ := errorformat.NewErrorformat([]string{`%f:%l:%c: %m`})
 	p := parser.NewErrorformatParser(efm)
 	d := NewDiffString(difftext, 1)
-	app := NewReviewdog("tool name", p, c, d, filter.ModeAdded, true)
+	pe := make(map[string]bool)
+	app := NewReviewdog("tool name", p, c, d, filter.ModeAdded, true, &pe)
 	err := app.Run(context.Background(), strings.NewReader(lintresult))
 
 	if err != nil && err.Error() != "input data has violations" {

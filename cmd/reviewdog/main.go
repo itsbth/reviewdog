@@ -59,6 +59,7 @@ type option struct {
 	tee              bool
 	filterMode       filter.Mode
 	failOnError      bool
+	preExisting string
 }
 
 // flags doc
@@ -168,6 +169,7 @@ const (
 		$ export CI_REPO_NAME="reviewdog" # repository name
 `
 	failOnErrorDoc = `Returns 1 as exit code if any errors/warnings found in input`
+	preExisitingDoc = `Filter out pre-existing errors`
 )
 
 var opt = &option{}
@@ -189,6 +191,7 @@ func init() {
 	flag.BoolVar(&opt.tee, "tee", false, teeDoc)
 	flag.Var(&opt.filterMode, "filter-mode", filterModeDoc)
 	flag.BoolVar(&opt.failOnError, "fail-on-error", false, failOnErrorDoc)
+	flag.StringVar(&opt.preExisting, "pre-existing", "", preExisitingDoc)
 }
 
 func usage() {
@@ -341,12 +344,25 @@ github-pr-check reporter as a fallback.
 		}
 	}
 
+	preExistingIssues := make(map[string]bool)
+
+	if (opt.preExisting != "") {
+		data, err := ioutil.ReadFile(opt.preExisting)
+		if err != nil {
+			return err
+		}
+		lines := strings.Split(string(data), "\n")
+		for _, line := range lines {
+			preExistingIssues[line] = true
+		}
+	}
+
 	if isProject {
 		conf, err := projectConfig(opt.conf)
 		if err != nil {
 			return err
 		}
-		return project.Run(ctx, conf, buildRunnersMap(opt.runners), cs, ds, opt.tee, opt.filterMode, opt.failOnError)
+		return project.Run(ctx, conf, buildRunnersMap(opt.runners), cs, ds, opt.tee, opt.filterMode, opt.failOnError, &preExistingIssues)
 	}
 
 	p, err := newParserFromOpt(opt)
@@ -354,7 +370,7 @@ github-pr-check reporter as a fallback.
 		return err
 	}
 
-	app := reviewdog.NewReviewdog(toolName(opt), p, cs, ds, opt.filterMode, opt.failOnError)
+	app := reviewdog.NewReviewdog(toolName(opt), p, cs, ds, opt.filterMode, opt.failOnError, &preExistingIssues)
 	return app.Run(ctx, r)
 }
 

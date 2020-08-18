@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/reviewdog/reviewdog/diff"
 	"github.com/reviewdog/reviewdog/filter"
@@ -17,23 +18,24 @@ import (
 // or linter, get diff and filter the results by diff, and report filtered
 // results.
 type Reviewdog struct {
-	toolname    string
-	p           parser.Parser
-	c           CommentService
-	d           DiffService
-	filterMode  filter.Mode
-	failOnError bool
+	toolname       string
+	p              parser.Parser
+	c              CommentService
+	d              DiffService
+	filterMode     filter.Mode
+	failOnError    bool
+	filteredIssues *map[string]bool
 }
 
 // NewReviewdog returns a new Reviewdog.
-func NewReviewdog(toolname string, p parser.Parser, c CommentService, d DiffService, filterMode filter.Mode, failOnError bool) *Reviewdog {
-	return &Reviewdog{p: p, c: c, d: d, toolname: toolname, filterMode: filterMode, failOnError: failOnError}
+func NewReviewdog(toolname string, p parser.Parser, c CommentService, d DiffService, filterMode filter.Mode, failOnError bool, filteredIssues *map[string]bool) *Reviewdog {
+	return &Reviewdog{p: p, c: c, d: d, toolname: toolname, filterMode: filterMode, failOnError: failOnError, filteredIssues: filteredIssues}
 }
 
 // RunFromResult creates a new Reviewdog and runs it with check results.
 func RunFromResult(ctx context.Context, c CommentService, results []*rdf.Diagnostic,
-	filediffs []*diff.FileDiff, strip int, toolname string, filterMode filter.Mode, failOnError bool) error {
-	return (&Reviewdog{c: c, toolname: toolname, filterMode: filterMode, failOnError: failOnError}).runFromResult(ctx, results, filediffs, strip, failOnError)
+	filediffs []*diff.FileDiff, strip int, toolname string, filterMode filter.Mode, failOnError bool, filteredIssues *map[string]bool) error {
+	return (&Reviewdog{c: c, toolname: toolname, filterMode: filterMode, failOnError: failOnError, filteredIssues: filteredIssues}).runFromResult(ctx, results, filediffs, strip, failOnError)
 }
 
 // Comment represents a reported result as a comment.
@@ -70,6 +72,9 @@ func (w *Reviewdog) runFromResult(ctx context.Context, results []*rdf.Diagnostic
 	checks := filter.FilterCheck(results, filediffs, strip, wd, w.filterMode)
 	hasViolations := false
 
+	builder := strings.Builder{}
+	ucw := NewUnifiedCommentWriter(&builder)
+
 	for _, check := range checks {
 		if !check.ShouldReport {
 			continue
@@ -77,6 +82,12 @@ func (w *Reviewdog) runFromResult(ctx context.Context, results []*rdf.Diagnostic
 		comment := &Comment{
 			Result:   check,
 			ToolName: w.toolname,
+		}
+		_ = ucw.Post(ctx, comment)
+		key := strings.TrimSpace(builder.String())
+		builder.Reset()
+		if _, exists := (*w.filteredIssues)[key]; exists {
+			continue
 		}
 		if err := w.c.Post(ctx, comment); err != nil {
 			return err

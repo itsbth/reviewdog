@@ -36,10 +36,11 @@ func (f *fakeCommentService) Post(_ context.Context, c *reviewdog.Comment) error
 
 func TestRun(t *testing.T) {
 	ctx := context.Background()
+	pe := make(map[string]bool)
 
 	t.Run("empty", func(t *testing.T) {
 		conf := &Config{}
-		if err := Run(ctx, conf, nil, nil, nil, false, filter.ModeAdded, false); err != nil {
+		if err := Run(ctx, conf, nil, nil, nil, false, filter.ModeAdded, false, &pe); err != nil {
 			t.Error(err)
 		}
 	})
@@ -50,7 +51,7 @@ func TestRun(t *testing.T) {
 				"test": {},
 			},
 		}
-		if err := Run(ctx, conf, nil, nil, nil, false, filter.ModeAdded, false); err == nil {
+		if err := Run(ctx, conf, nil, nil, nil, false, filter.ModeAdded, false, &pe); err == nil {
 			t.Error("want error, got nil")
 		} else {
 			t.Log(err)
@@ -71,7 +72,7 @@ func TestRun(t *testing.T) {
 				},
 			},
 		}
-		if err := Run(ctx, conf, nil, nil, ds, false, filter.ModeAdded, false); err == nil {
+		if err := Run(ctx, conf, nil, nil, ds, false, filter.ModeAdded, false, &pe); err == nil {
 			t.Error("want error, got nil")
 		} else {
 			t.Log(err)
@@ -99,7 +100,7 @@ func TestRun(t *testing.T) {
 				},
 			},
 		}
-		if err := Run(ctx, conf, nil, cs, ds, false, filter.ModeAdded, false); err != nil {
+		if err := Run(ctx, conf, nil, cs, ds, false, filter.ModeAdded, false, &pe); err != nil {
 			t.Error(err)
 		}
 		want := ""
@@ -129,7 +130,7 @@ func TestRun(t *testing.T) {
 				},
 			},
 		}
-		if err := Run(ctx, conf, nil, cs, ds, false, filter.ModeAdded, false); err == nil {
+		if err := Run(ctx, conf, nil, cs, ds, false, filter.ModeAdded, false, &pe); err == nil {
 			t.Error("want error, got nil")
 		} else {
 			t.Log(err)
@@ -157,7 +158,7 @@ func TestRun(t *testing.T) {
 				},
 			},
 		}
-		if err := Run(ctx, conf, nil, cs, ds, true, filter.ModeAdded, false); err == nil {
+		if err := Run(ctx, conf, nil, cs, ds, true, filter.ModeAdded, false, &pe); err == nil {
 			t.Error("want error, got nil")
 		} else {
 			t.Log(err)
@@ -187,7 +188,7 @@ func TestRun(t *testing.T) {
 				},
 			},
 		}
-		if err := Run(ctx, conf, nil, cs, ds, false, filter.ModeAdded, false); err != nil {
+		if err := Run(ctx, conf, nil, cs, ds, false, filter.ModeAdded, false, &pe); err != nil {
 			t.Error(err)
 		}
 	})
@@ -213,7 +214,7 @@ func TestRun(t *testing.T) {
 				},
 			},
 		}
-		if err := Run(ctx, conf, nil, cs, ds, true, filter.ModeAdded, false); err != nil {
+		if err := Run(ctx, conf, nil, cs, ds, true, filter.ModeAdded, false, &pe); err != nil {
 			t.Error(err)
 		}
 		want := "hi\n"
@@ -249,7 +250,7 @@ func TestRun(t *testing.T) {
 				},
 			},
 		}
-		if err := Run(ctx, conf, map[string]bool{"test2": true}, cs, ds, false, filter.ModeAdded, false); err != nil {
+		if err := Run(ctx, conf, map[string]bool{"test2": true}, cs, ds, false, filter.ModeAdded, false, &pe); err != nil {
 			t.Error(err)
 		}
 		if called != 1 {
@@ -282,7 +283,7 @@ func TestRun(t *testing.T) {
 				},
 			},
 		}
-		if err := Run(ctx, conf, map[string]bool{"hoge": true}, cs, ds, false, filter.ModeAdded, false); err == nil {
+		if err := Run(ctx, conf, map[string]bool{"hoge": true}, cs, ds, false, filter.ModeAdded, false, &pe); err == nil {
 			t.Error("got no error but want runner not found error")
 		}
 	})
